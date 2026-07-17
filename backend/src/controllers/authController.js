@@ -198,6 +198,13 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     console.error("Register error:", error);
+
+    if (error?.code === "EAUTH" || error?.responseCode === 535) {
+      return res.status(503).json({
+        message: "Registration email is temporarily unavailable. Please try again later.",
+      });
+    }
+
     return res.status(500).json({ message: "Registration failed" });
   }
 };
@@ -417,7 +424,6 @@ exports.resetPassword = async (req, res) => {
 exports.refreshToken = async (req, res) => {
   try {
     const incomingToken = req.body.refreshToken || req.cookies?.refreshToken;
-    console.log(`Incoming refresh token: ${incomingToken}`);
     if (!incomingToken) {
       return res.status(400).json({ message: "Refresh token is required" });
     }
@@ -428,7 +434,6 @@ exports.refreshToken = async (req, res) => {
     );
     const user = await User.findById(decoded.id);
 
-    console.log(`Found user: ${user ? user._id : "Not found"}`);
     if (!user || user.refreshToken !== incomingToken) {
       return res.status(401).json({ message: "Invalid refresh token" });
     }

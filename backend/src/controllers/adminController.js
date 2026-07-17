@@ -1,5 +1,8 @@
 const User = require("../models/User");
 const Memorial = require("../models/Memorial");
+const Condolence = require("../models/Condolence");
+const FuneralHome = require("../models/FuneralHome");
+const PasswordResetToken = require("../models/PasswordResetToken");
 const { uploadBuffer } = require("../config/cloudinary");
 
 async function uploadToCloudinary(file, folder) {
@@ -25,17 +28,46 @@ exports.getAllUsers = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    if (String(req.params.id) === String(req.user.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete your own admin account",
+      });
+    }
+
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    // Delete associated memorials
-    await Memorial.deleteMany({ UserId: req.params.id });
+
+    if (user.role === "admin") {
+      return res.status(400).json({
+        success: false,
+        message: "Admin accounts cannot be deleted from user management",
+      });
+    }
+
+    // Published memorials are permanent public records. Transfer ownership to
+    // the acting admin before removing the user's private account data.
+    const transferResult = await Memorial.updateMany(
+      { UserId: req.params.id },
+      { $set: { UserId: String(req.user.id) } },
+    );
+
+    await Condolence.updateMany(
+      { userId: req.params.id },
+      { $unset: { userId: "" } },
+    );
+    await FuneralHome.deleteMany({ userId: req.params.id });
+    await PasswordResetToken.deleteMany({ userId: req.params.id });
+    await User.deleteOne({ _id: req.params.id });
+
     res.status(200).json({
       success: true,
-      message: "User and their memorials deleted successfully",
+      message: "User deleted and memorials preserved",
+      transferredMemorials: transferResult.modifiedCount,
     });
   } catch (error) {
     res.status(500).json({

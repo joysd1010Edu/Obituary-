@@ -47,12 +47,17 @@ export default function UsersManagement() {
   useEffect(() => { fetchUsers(); }, [api]);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Delete ${name} and all their memorials? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete ${name}? Their memorials will be preserved and transferred to your admin account. The user account cannot be restored.`)) return;
     try {
-      await api.delete(`/admin/users/${id}`);
+      const response = await api.delete(`/admin/users/${id}`);
       setUsers((prev) => prev.filter((u) => u._id !== id));
       if (selectedUser?._id === id) setSelectedUser(null);
-      toast.success("User deleted successfully");
+      const transferred = response.data?.transferredMemorials || 0;
+      toast.success(
+        transferred > 0
+          ? `User deleted. ${transferred} memorial${transferred === 1 ? "" : "s"} preserved.`
+          : "User deleted successfully",
+      );
     } catch (error) {
       toast.error("Failed to delete user");
     }
@@ -137,10 +142,12 @@ export default function UsersManagement() {
                             Approve Coupon
                           </button>
                         )}
-                        <button onClick={() => handleDelete(user._id, `${user.firstName} ${user.lastName}`)}
-                          className="rounded-md border border-red-200 bg-red-50 p-1.5 text-red-600 transition hover:bg-red-100" title="Delete user">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {user.role !== "admin" && (
+                          <button onClick={() => handleDelete(user._id, `${user.firstName} ${user.lastName}`)}
+                            className="rounded-md border border-red-200 bg-red-50 p-1.5 text-red-600 transition hover:bg-red-100" title="Delete user">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -227,10 +234,13 @@ export default function UsersManagement() {
                       ✅ Approve Coupon Request
                     </button>
                   )}
-                  <button onClick={() => handleDelete(selectedUser._id, `${selectedUser.firstName} ${selectedUser.lastName}`)}
-                    className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100">
-                    🗑️ Delete User & Memorials
-                  </button>
+                  {selectedUser.role !== "admin" && (
+                    <button onClick={() => handleDelete(selectedUser._id, `${selectedUser.firstName} ${selectedUser.lastName}`)}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-100">
+                      <Trash2 className="h-4 w-4" />
+                      Delete User
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

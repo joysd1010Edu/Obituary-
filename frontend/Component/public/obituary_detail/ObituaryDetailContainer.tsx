@@ -17,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { FaInstagram, FaTiktok, FaXTwitter } from "react-icons/fa6";
 import { FiCopy } from "react-icons/fi";
+import { Info, MailPlus, Send } from "lucide-react";
 
 import { useAxios } from "../../../context/AxiosProvider";
 import {
@@ -32,6 +33,7 @@ import CondolenceSection from "./CondolenceSection";
 
 const AUTO_DELAY = 2200;
 const VISIBLE_SLIDES = 3;
+const INFO_UPDATE_EMAIL = "info@orbelofyfuneralcare.com";
 const TRIBUTE_IMAGES = {
   candle: "https://pngimg.com/uploads/candle/candle_PNG7305.png",
   flower:
@@ -225,6 +227,7 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
   const [memorial, setMemorial] = useState<MemorialData | null>(null);
   const [isFamilyTreeOpen, setIsFamilyTreeOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isAddInfoOpen, setIsAddInfoOpen] = useState(false);
   const [isTributeOpen, setIsTributeOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
@@ -277,6 +280,23 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
   const shareText = `View the memorial page for ${shareTitle}`;
   const encodedShareUrl = encodeURIComponent(shareUrl || "");
   const encodedShareText = encodeURIComponent(shareText);
+  const infoUpdateSubject = encodeURIComponent(`Information update for ${shareTitle}`);
+  const infoUpdateBody = encodeURIComponent(
+    [
+      `Hello Orbelofy Funeral Care team,`,
+      "",
+      `I would like to request an information update for the memorial page of ${shareTitle}.`,
+      "",
+      `Memorial page: ${shareUrl || ""}`,
+      "",
+      "Requested update:",
+      "",
+      "Your name:",
+      "Your relationship to the deceased:",
+      "Your contact number:",
+    ].join("\n"),
+  );
+  const infoUpdateMailto = `mailto:${INFO_UPDATE_EMAIL}?subject=${infoUpdateSubject}&body=${infoUpdateBody}`;
 
   const openShareUrl = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
 
@@ -391,6 +411,11 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
               className="inline-flex min-w-36 items-center justify-center rounded-lg border border-[#274877] bg-white px-5 py-3 text-sm font-semibold text-[#274877] shadow-sm transition hover:bg-[#f4f7fb]">
               Share
             </button>
+            <button type="button" onClick={() => setIsAddInfoOpen(true)}
+              className="inline-flex min-w-36 items-center justify-center gap-2 rounded-lg border border-[#274877] bg-white px-5 py-3 text-sm font-semibold text-[#274877] shadow-sm transition hover:bg-[#f4f7fb]">
+              <MailPlus className="h-4 w-4" />
+              Add Info
+            </button>
           </div>
         </section>
 
@@ -444,13 +469,10 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
               <div className="rounded-[14px] border border-black/10 bg-white p-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] sm:p-8">
                 <h2 className="font-serif text-2xl tracking-tight text-slate-900 sm:text-[1.9rem]">
                   {fhd.name || "Funeral Home"}
-                  {cityPart ? ` — ${cityPart}` : ""}
                 </h2>
                 <div className="mt-8 grid gap-8 sm:grid-cols-2">
                   <div className="space-y-4 text-[15px] leading-7 text-[#cc5f0b]">
                     {fhd.address && <p>{fhd.address}</p>}
-                    {cityPart && <p>{cityPart},</p>}
-                    {memorial.country && <p>{memorial.country}</p>}
                   </div>
                   <div className="space-y-4 text-[15px] leading-7 text-[#cc5f0b]">
                     {fhd.website && (
@@ -632,6 +654,52 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
               ) : (
                 <p className="text-center text-slate-500 py-12">No family tree diagram available.</p>
               )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ADD INFO DIALOG */}
+      <Dialog open={isAddInfoOpen} onOpenChange={setIsAddInfoOpen}>
+        <DialogContent className="w-[calc(100%-1rem)] max-w-xl p-0 sm:max-w-xl">
+          <div className="max-h-[90vh] overflow-y-auto rounded-2xl bg-white px-5 py-5 sm:px-6 sm:py-6">
+            <DialogHeader className="items-center text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f8ead0] text-[#9f7427] shadow-sm transition duration-300 hover:scale-105 hover:bg-[#f2dfb9] hover:shadow-md">
+                <Info className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-2xl font-semibold tracking-tight text-slate-950">
+                Add or update missing memorial information/photos
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-6 text-slate-600">
+                If you would like to add missing details, correct an existing detail, or provide additional context for this memorial, please contact our care team by email.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mt-5 rounded-xl border border-[#ead9b8] bg-[#fffaf0] p-4 text-sm leading-6 text-slate-700 transition duration-300 hover:-translate-y-0.5 hover:border-[#d8bd84] hover:shadow-md">
+              <p className="font-semibold text-slate-950">Please include:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>The memorial name and page link</li>
+                <li>The information or photos you would like added or corrected</li>
+                <li>Your name and relationship to the deceased</li>
+              </ul>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 transition duration-300 hover:-translate-y-0.5 hover:border-[#274877]/30 hover:bg-white hover:shadow-md">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contact email</p>
+              <p className="mt-1 break-all text-base font-semibold text-[#274877]">{INFO_UPDATE_EMAIL}</p>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsAddInfoOpen(false)}>
+                Close
+              </Button>
+              <a
+                href={infoUpdateMailto}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#274877] px-5 py-3 text-sm font-semibold text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:bg-[#1f3a60] hover:shadow-lg"
+              >
+                <Send className="h-4 w-4" />
+                Compose Update Email
+              </a>
             </div>
           </div>
         </DialogContent>

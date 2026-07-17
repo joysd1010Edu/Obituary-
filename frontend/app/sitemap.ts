@@ -1,12 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://orbelofy.com"
-).replace(/\/$/, "");
-
-const apiUrl = (
-  process.env.NEXT_PUBLIC_API_URL ?? "https://api.orbelofy.com/api"
-).replace(/\/$/, "");
+import { apiUrl, siteUrl } from "./seo";
 
 type MemorialSitemapItem = {
   _id?: string;
@@ -32,22 +25,16 @@ function staticPages(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${siteUrl}/memorials`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
+    {
       url: `${siteUrl}/memorial`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,
-    },
-    {
-      url: `${siteUrl}/login`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-    {
-      url: `${siteUrl}/register`,
-      lastModified: now,
-      changeFrequency: "yearly",
-      priority: 0.2,
     },
   ];
 }

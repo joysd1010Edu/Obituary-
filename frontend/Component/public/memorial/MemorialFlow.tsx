@@ -54,7 +54,6 @@ type FuneralNotice = {
 type SubmissionFlow = {
   personalDetails: {
     fullName: string;
-    birthdate: string;
     dateOfDeath: string;
     location: string;
     obituary: string;
@@ -124,7 +123,6 @@ const createFuneralNotice = (): FuneralNotice => ({
 const initialFlow: SubmissionFlow = {
   personalDetails: {
     fullName: "",
-    birthdate: "",
     dateOfDeath: "",
     location: "",
     familyDetails: "",
@@ -240,10 +238,6 @@ const normalizeFlow = (value: unknown): SubmissionFlow => {
       fullName:
         typeof raw.personalDetails?.fullName === "string"
           ? raw.personalDetails.fullName
-          : "",
-      birthdate:
-        typeof raw.personalDetails?.birthdate === "string"
-          ? raw.personalDetails.birthdate
           : "",
       dateOfDeath:
         typeof raw.personalDetails?.dateOfDeath === "string"
@@ -538,19 +532,6 @@ export default function MemorialFlow() {
         return false;
       }
 
-      if (hasValue(personalDetails.birthdate)) {
-        const birthDate = new Date(personalDetails.birthdate);
-        if (Number.isNaN(birthDate.getTime())) {
-          toast.error("Please provide a valid birth date or leave it empty.");
-          return false;
-        }
-
-        if (birthDate >= deathDate) {
-          toast.error("Birth date cannot be the same as or newer than death date.");
-          return false;
-        }
-      }
-
       return true;
     }
 
@@ -654,7 +635,6 @@ export default function MemorialFlow() {
     try {
       const formData = new FormData();
       formData.append("name", clean(flow.personalDetails.fullName));
-      formData.append("birthdate", flow.personalDetails.birthdate);
       formData.append("deathDate", flow.personalDetails.dateOfDeath);
       formData.append("location", clean(flow.personalDetails.location));
       formData.append("memorialDetails", clean(flow.personalDetails.obituary));
@@ -847,22 +827,6 @@ export default function MemorialFlow() {
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2">
-                  <div>
-                    <Label>Date of Birth</Label>
-                    <TextInput
-                      type="date"
-                      value={flow.personalDetails.birthdate}
-                      onChange={(value) =>
-                        setFlow((current) => ({
-                          ...current,
-                          personalDetails: {
-                            ...current.personalDetails,
-                            birthdate: value,
-                          },
-                        }))
-                      }
-                    />
-                  </div>
                   <div>
                     <Label>Date of Death *</Label>
                     <TextInput

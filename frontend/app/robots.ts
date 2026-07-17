@@ -1,8 +1,5 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://orbelofy.com"
-).replace(/\/$/, "");
+import { siteUrl } from "./seo";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -10,7 +7,16 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/profile", "/login", "/register/verify"],
+        disallow: [
+          "/admin",
+          "/profile",
+          "/profile/create",
+          "/login",
+          "/register",
+          "/register/verify",
+          "/forgot-password",
+          "/api",
+        ],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

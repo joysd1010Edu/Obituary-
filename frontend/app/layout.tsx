@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import { Crimson_Text, Geist_Mono, Montserrat } from "next/font/google";
 import AppProviders from "./providers";
 import "./globals.css";
+import {
+  absoluteUrl,
+  alternateDomains,
+  defaultDescription,
+  defaultKeywords,
+  defaultTitle,
+  siteName,
+  siteUrl,
+} from "./seo";
 
 const montserrat = Montserrat({
   variable: "--font-sans",
@@ -21,40 +30,60 @@ const crimsonText = Crimson_Text({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://orbelofy.com"),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Orbelofy | Memorials & Obituaries",
+    default: defaultTitle,
     template: "%s | Orbelofy",
   },
-  description:
-    "Create, discover, and share meaningful online memorials and obituary pages with photos, funeral details, tributes, and donation options.",
-  applicationName: "Orbelofy",
+  description: defaultDescription,
+  keywords: defaultKeywords,
+  applicationName: siteName,
+  authors: [{ name: siteName }],
+  creator: siteName,
+  publisher: siteName,
+  category: "memorials",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   alternates: {
     canonical: "/",
+    languages: {
+      "en-US": alternateDomains[0],
+      "en-GB": "https://orbelofy.co.uk",
+      "en-IE": "https://orbelofy.ie",
+      "x-default": alternateDomains[0],
+    },
   },
   openGraph: {
-    title: "Orbelofy | Memorials & Obituaries",
-    description:
-      "Create, discover, and share meaningful online memorials and obituary pages.",
+    title: defaultTitle,
+    description: defaultDescription,
     url: "/",
-    siteName: "Orbelofy",
+    siteName,
     images: [
       {
-        url: "/logo.png",
+        url: absoluteUrl("/logo.png"),
         width: 512,
         height: 512,
-        alt: "Orbelofy",
+        alt: siteName,
       },
     ],
-    locale: "en_US",
+    locale: "en_GB",
+    alternateLocale: ["en_US", "en_IE"],
     type: "website",
   },
   twitter: {
-    card: "summary",
-    title: "Orbelofy | Memorials & Obituaries",
-    description:
-      "Create, discover, and share meaningful online memorials and obituary pages.",
-    images: ["/logo.png"],
+    card: "summary_large_image",
+    title: defaultTitle,
+    description: defaultDescription,
+    images: [absoluteUrl("/logo.png")],
   },
   icons: {
     icon: "/favicon.png",

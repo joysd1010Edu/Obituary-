@@ -281,7 +281,10 @@ exports.getPublicMemorials = async (req, res) => {
 // ================= Get Single Public Memorial =================
 exports.getMemorialById = async (req, res) => {
   try {
-    const memorial = await Memorial.findById(req.params.id);
+    const memorial = await Memorial.findOne({
+      _id: req.params.id,
+      status: "approved",
+    });
     if (!memorial) {
       return res.status(404).json({ message: "Memorial not found" });
     }
