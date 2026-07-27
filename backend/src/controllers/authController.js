@@ -141,8 +141,8 @@ exports.register = async (req, res) => {
     }
 
     const postalCode = String(parsedAddress?.postalCode || "").trim();
-    if (!/^[0-9]+$/.test(postalCode)) {
-      return res.status(400).json({ message: "Postal code must contain numbers only" });
+    if (!postalCode) {
+      // Allow any alphanumeric postal code to pass through since address field validation requires it
     }
 
     if (req.file) {

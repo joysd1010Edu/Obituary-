@@ -76,7 +76,7 @@ function matchesPublishDateFilters(
   obituary: ObituaryMock,
   selectedFilters: Set<string>,
 ): boolean {
-  if (selectedFilters.size === 0) {
+  if (selectedFilters.size === 0 || selectedFilters.has("all")) {
     return true;
   }
 
@@ -122,12 +122,12 @@ function matchesCountryFilters(
   obituary: ObituaryMock,
   selectedFilters: Set<string>,
 ): boolean {
-  if (selectedFilters.size === 0) {
+  if (selectedFilters.size === 0 || selectedFilters.has("all")) {
     return true;
   }
 
   return Array.from(selectedFilters).some((filterId) => {
-    if (filterId === "irish") {
+    if (filterId === "ireland") {
       return obituary.location.country?.toLowerCase().includes("ireland");
     }
 

@@ -33,8 +33,7 @@ const registerSchema = z
       postalCode: z
         .string()
         .trim()
-        .min(1, "Postal code is required.")
-        .regex(/^[0-9]+$/, "Postal code must contain numbers only."),
+        .min(1, "Postal code is required."),
       country: z.string().trim().min(1, "Country is required."),
     }),
     terms: z.boolean().refine(Boolean, "You must agree before creating an account."),
@@ -213,7 +212,7 @@ export default function RegisterForm() {
         </div>
         <div className="space-y-2">
           <label className="block text-[0.92rem] font-semibold text-[#2f2c29]" htmlFor="postalCode">Postal Code</label>
-          <input id="postalCode" inputMode="numeric" pattern="[0-9]*" placeholder="Postal Code" className="h-12 w-full rounded-[10px] border border-[#e6e1da] bg-white px-4 text-[0.98rem] text-[#2f2c29] outline-none transition placeholder:text-[#b2ada7] focus:border-[#b4aba1]" {...register("address.postalCode")} />
+          <input id="postalCode" placeholder="Postal Code" className="h-12 w-full rounded-[10px] border border-[#e6e1da] bg-white px-4 text-[0.98rem] text-[#2f2c29] outline-none transition placeholder:text-[#b2ada7] focus:border-[#b4aba1]" {...register("address.postalCode")} />
           {errors.address?.postalCode ? <p className="text-sm text-red-600">{errors.address.postalCode.message}</p> : null}
         </div>
         <div className="space-y-2">
