@@ -1,10 +1,8 @@
-import OtpVerificationPage from "../../../../Component/public/auth/register/OtpVerificationPage";
+import { redirect } from "next/navigation";
 
 /**
- * Renders the OTP verification route.
- *
- * @returns {JSX.Element} The verification page.
+ * Redirects obsolete OTP verification route back to register.
  */
 export default function VerifyPage() {
-  return <OtpVerificationPage />;
+  redirect("/register");
 }

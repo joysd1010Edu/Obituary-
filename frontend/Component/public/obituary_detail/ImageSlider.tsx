@@ -1,230 +1,235 @@
 "use client";
 
 import Image from "next/image";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
-
-const AUTO_DELAY = 3200;
-const GAP = 18;
-const VISIBLE_SLIDES = 3;
+import { useCallback, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type ImageSliderProps = {
   images: string[];
 };
 
-function buildSlides(images: string[]): string[] {
-  if (images.length === 0) {
-    return [];
-  }
-
-  if (images.length >= VISIBLE_SLIDES) {
-    return images;
-  }
-
-  const slides = [...images];
-  while (slides.length < VISIBLE_SLIDES) {
-    slides.push(images[slides.length % images.length]);
-  }
-
-  return slides;
-}
-
-function getBreakpoint(): "mobile" | "desktop" {
-  if (typeof window === "undefined") {
-    return "desktop";
-  }
-
-  return window.innerWidth < 768 ? "mobile" : "desktop";
-}
-
 export default function ImageSlider({ images }: ImageSliderProps) {
-  const slides = useMemo(() => buildSlides(images), [images]);
+  const validImages = (images || []).filter(Boolean);
+  const total = validImages.length;
   const [current, setCurrent] = useState(0);
-  const [breakpoint, setBreakpoint] = useState<"mobile" | "desktop">("desktop");
-  const timerRef = useRef<number | null>(null);
-  const isMobile = breakpoint === "mobile";
+  const [touchStart, setTouchStart] = useState<number | null>(null);
 
   const goToNext = useCallback(() => {
-    setCurrent((value) =>
-      slides.length === 0 ? 0 : (value + 1) % slides.length,
-    );
-  }, [slides.length]);
+    if (total <= 1) return;
+    setCurrent((prev) => (prev + 1) % total);
+  }, [total]);
 
   const goToPrev = useCallback(() => {
-    setCurrent((value) =>
-      slides.length === 0 ? 0 : (value - 1 + slides.length) % slides.length,
-    );
-  }, [slides.length]);
+    if (total <= 1) return;
+    setCurrent((prev) => (prev - 1 + total) % total);
+  }, [total]);
 
-  const pauseTimer = useCallback(() => {
-    if (timerRef.current !== null) {
-      window.clearInterval(timerRef.current);
-    }
-    timerRef.current = null;
-  }, []);
-
-  const restartTimer = useCallback(() => {
-    pauseTimer();
-    if (slides.length <= 1) return;
-    timerRef.current = window.setInterval(() => {
-      setCurrent((value) =>
-        slides.length === 0 ? 0 : (value + 1) % slides.length,
-      );
-    }, AUTO_DELAY);
-  }, [pauseTimer, slides.length]);
-
+  // Keyboard navigation when user presses left or right arrow keys
   useEffect(() => {
-    setBreakpoint(getBreakpoint());
-
-    const handleResize = () => setBreakpoint(getBreakpoint());
-    window.addEventListener("resize", handleResize);
-
-    if (slides.length === 0) {
-      return () => window.removeEventListener("resize", handleResize);
-    }
-
-    restartTimer();
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (timerRef.current !== null) {
-        window.clearInterval(timerRef.current);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        goToPrev();
+      } else if (e.key === "ArrowRight") {
+        goToNext();
       }
     };
-  }, [restartTimer, slides.length]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [goToNext, goToPrev]);
 
+  // Reset index if image array changes
   useEffect(() => {
-    setCurrent((value) => (slides.length === 0 ? 0 : value % slides.length));
-  }, [slides.length]);
+    setCurrent(0);
+  }, [images]);
 
-  if (slides.length === 0) {
-    return null;
+  if (total === 0) {
+    return (
+      <div className="relative mx-auto h-[360px] w-full max-w-[420px] overflow-hidden rounded-[30px] shadow-[0_12px_36px_rgba(0,0,0,0.12)]">
+        <Image
+          src="/Source/Placeholder_Person.png"
+          alt="Memorial photo"
+          fill
+          priority
+          className="object-cover"
+          sizes="(max-width: 768px) 90vw, 420px"
+        />
+      </div>
+    );
   }
 
-  const visibleIndexes = isMobile
-    ? [current]
-    : [current - 1, current, current + 1].map(
-        (index) => (index + slides.length) % slides.length,
-      );
+  // If only 1 image: Render a single centered elegant card without slider controls
+  if (total === 1) {
+    return (
+      <div className="relative mx-auto flex justify-center py-6">
+        <div className="relative h-[380px] sm:h-[460px] md:h-[520px] w-full max-w-[420px] overflow-hidden rounded-[32px] shadow-[0_16px_40px_rgba(15,23,42,0.14)] ring-1 ring-black/5">
+          <Image
+            src={validImages[0]}
+            alt="Memorial photo"
+            fill
+            priority
+            className="object-cover"
+            sizes="(max-width: 768px) 90vw, 420px"
+          />
+        </div>
+      </div>
+    );
+  }
 
-  const handlePrevious = () => {
-    goToPrev();
-    restartTimer();
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
   };
 
-  const handleNext = () => {
-    goToNext();
-    restartTimer();
-  };
-
-  const slideStyle = (position: "left" | "center" | "right"): CSSProperties => {
-    if (isMobile) {
-      return {
-        left: "50%",
-        width: "100%",
-        transform: "translate(-50%, -50%) scale(1)",
-        zIndex: 10,
-      };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return;
+    const touchEnd = e.changedTouches[0].clientX;
+    const diff = touchStart - touchEnd;
+    if (diff > 50) {
+      goToNext();
+    } else if (diff < -50) {
+      goToPrev();
     }
-
-    if (position === "center") {
-      return {
-        left: "50%",
-        width: "54%",
-        transform: "translate(-50%, -50%) scale(1.08)",
-        zIndex: 30,
-      };
-    }
-
-    return position === "left"
-      ? {
-          left: "10%",
-          width: "38%",
-          transform: "translateY(-43%) scale(0.94)",
-          zIndex: 20,
-          opacity: 0.78,
-        }
-      : {
-          left: "90%",
-          width: "38%",
-          transform: "translate(-100%, -43%) scale(0.94)",
-          zIndex: 20,
-          opacity: 0.78,
-        };
+    setTouchStart(null);
   };
 
-  const sliderHeight = isMobile ? 380 : 560;
+  // For 2 images or 3+ images, calculate left, center, right slides
+  const prevIndex = (current - 1 + total) % total;
+  const nextIndex = (current + 1) % total;
 
   return (
     <div
-      className="select-none"
-      onMouseEnter={pauseTimer}
-      onMouseLeave={restartTimer}
-      onFocus={pauseTimer}
-      onBlur={restartTimer}
+      className="relative mx-auto w-full max-w-6xl select-none py-6 sm:py-10"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-3 sm:gap-4">
+      {/* DESKTOP 3D PERSPECTIVE CAROUSEL */}
+      <div className="relative hidden md:flex items-center justify-center h-[520px] overflow-hidden">
+        {/* Previous Button */}
         <button
           type="button"
-          onClick={handlePrevious}
+          onClick={goToPrev}
           aria-label="Previous slide"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700 transition hover:bg-neutral-300 sm:h-12 sm:w-12"
+          className="absolute left-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white hover:text-slate-900 active:scale-95"
         >
-          ‹
+          <ChevronLeft className="h-7 w-7 stroke-[2.5]" />
         </button>
 
-        <div
-          className="relative flex-1 overflow-hidden"
-          style={{ height: sliderHeight }}
-        >
-          {visibleIndexes.map((index, position) => {
-            const slidePosition = isMobile
-              ? "center"
-              : position === 1
-                ? "center"
-                : position === 0
-                  ? "left"
-                  : "right";
+        {/* Slides Track */}
+        <div className="relative flex h-full w-full items-center justify-center">
+          {/* Left Slide (Previous) */}
+          {total >= 3 && (
+            <button
+              type="button"
+              onClick={goToPrev}
+              aria-label="View previous image"
+              className="absolute left-[8%] z-20 h-[400px] w-[300px] cursor-pointer overflow-hidden rounded-[28px] opacity-60 shadow-lg transition-all duration-500 hover:opacity-85 hover:scale-[0.96]"
+            >
+              <Image
+                src={validImages[prevIndex]}
+                alt={`Photo ${prevIndex + 1}`}
+                fill
+                className="object-cover"
+                sizes="300px"
+              />
+              <div className="absolute inset-0 bg-black/20" />
+            </button>
+          )}
 
-            return (
-              <button
-                key={`${slides[index]}-${index}`}
-                type="button"
-                onClick={() => {
-                  setCurrent(index);
-                  restartTimer();
-                }}
-                className="absolute top-1/2 block aspect-[4/3] overflow-hidden rounded-[1.85rem] border-0 bg-transparent p-0 outline-none transition-transform duration-500 ease-in-out"
-                style={slideStyle(slidePosition)}
-                aria-label={`Go to slide ${index + 1}`}
-              >
-                <Image
-                  src={slides[index]}
-                  alt={`Memorial image ${index + 1}`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 54vw"
-                  className="object-cover"
-                  priority={index === current}
-                />
-              </button>
-            );
-          })}
+          {/* Active Center Slide */}
+          <div className="relative z-30 h-[480px] w-[380px] overflow-hidden rounded-[32px] shadow-[0_20px_50px_rgba(15,23,42,0.22)] ring-1 ring-black/10 transition-all duration-500">
+            <Image
+              src={validImages[current]}
+              alt={`Photo ${current + 1}`}
+              fill
+              priority
+              className="object-cover"
+              sizes="(max-width: 1024px) 380px, 420px"
+            />
+          </div>
+
+          {/* Right Slide (Next) */}
+          {total >= 2 && (
+            <button
+              type="button"
+              onClick={goToNext}
+              aria-label="View next image"
+              className={`absolute ${total >= 3 ? "right-[8%]" : "right-[15%]"} z-20 h-[400px] w-[300px] cursor-pointer overflow-hidden rounded-[28px] opacity-60 shadow-lg transition-all duration-500 hover:opacity-85 hover:scale-[0.96]`}
+            >
+              <Image
+                src={validImages[nextIndex]}
+                alt={`Photo ${nextIndex + 1}`}
+                fill
+                className="object-cover"
+                sizes="300px"
+              />
+              <div className="absolute inset-0 bg-black/20" />
+            </button>
+          )}
         </div>
 
+        {/* Next Button */}
         <button
           type="button"
-          onClick={handleNext}
+          onClick={goToNext}
           aria-label="Next slide"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700 transition hover:bg-neutral-300 sm:h-12 sm:w-12"
+          className="absolute right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-md backdrop-blur-sm transition-all duration-300 hover:scale-110 hover:bg-white hover:text-slate-900 active:scale-95"
         >
-          ›
+          <ChevronRight className="h-7 w-7 stroke-[2.5]" />
         </button>
+      </div>
+
+      {/* MOBILE SLIDER */}
+      <div className="relative block md:hidden">
+        <div className="relative mx-auto h-[380px] sm:h-[440px] w-[90%] max-w-[360px] overflow-hidden rounded-[26px] shadow-[0_12px_32px_rgba(15,23,42,0.15)] ring-1 ring-black/10">
+          <Image
+            src={validImages[current]}
+            alt={`Memorial photo ${current + 1}`}
+            fill
+            priority
+            className="object-cover transition-all duration-500"
+            sizes="90vw"
+          />
+
+          {/* Floating Mobile Controls */}
+          <button
+            type="button"
+            onClick={goToPrev}
+            aria-label="Previous slide"
+            className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white shadow backdrop-blur-sm active:scale-90"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            onClick={goToNext}
+            aria-label="Next slide"
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white shadow backdrop-blur-sm active:scale-90"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        </div>
+      </div>
+
+      {/* MANUAL NAVIGATION INDICATOR / CONTROLS (Dots & Counter) */}
+      <div className="mt-5 flex flex-col items-center justify-center gap-2">
+        <div className="flex items-center gap-2">
+          {validImages.map((_, idx) => (
+            <button
+              key={`dot-${idx}`}
+              type="button"
+              onClick={() => setCurrent(idx)}
+              aria-label={`Go to slide ${idx + 1}`}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                idx === current
+                  ? "w-8 bg-[#274877]"
+                  : "w-2.5 bg-slate-300 hover:bg-slate-400"
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-xs font-medium text-slate-500">
+          {current + 1} / {total}
+        </span>
       </div>
     </div>
   );

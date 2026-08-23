@@ -30,9 +30,8 @@ import {
 import { Button } from "../../../components/ui/button";
 
 import CondolenceSection from "./CondolenceSection";
+import ImageSlider from "./ImageSlider";
 
-const AUTO_DELAY = 2200;
-const VISIBLE_SLIDES = 3;
 const INFO_UPDATE_EMAIL = "info@orbelofyfuneralcare.com";
 const TRIBUTE_IMAGES = {
   candle: "https://pngimg.com/uploads/candle/candle_PNG7305.png",
@@ -119,88 +118,7 @@ function getTributeLabel(type: TributeType): string {
   return type === "candle" ? "Candle" : "Flower";
 }
 
-function buildSlides(images: string[]): string[] {
-  if (images.length === 0) return [];
-  if (images.length >= VISIBLE_SLIDES) return images;
-  const slides = [...images];
-  while (slides.length < VISIBLE_SLIDES) {
-    slides.push(images[slides.length % images.length]);
-  }
-  return slides;
-}
 
-function ObituaryImageCarousel({ images }: { images: string[] }) {
-  const slides = useMemo(() => buildSlides(images), [images]);
-  const [current, setCurrent] = useState(0);
-  const nextSlide = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % slides.length);
-  }, [slides.length]);
-
-  const prevSlide = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
-  }, [slides.length]);
-
-  if (!slides.length) return null;
-
-  const showControls = images.length > 1;
-
-  return (
-    <>
-      {/* DESKTOP SLIDER */}
-      <div className="relative mx-auto hidden w-full max-w-7xl overflow-hidden py-14 md:block">
-        {showControls && (
-          <>
-            <button type="button" onClick={prevSlide}
-              className="absolute left-4 top-1/2 z-50 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-5xl text-slate-700 transition-all duration-300 hover:scale-105 hover:bg-neutral-300">‹</button>
-            <button type="button" onClick={nextSlide}
-              className="absolute right-4 top-1/2 z-50 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-5xl text-slate-700 transition-all duration-300 hover:scale-105 hover:bg-neutral-300">›</button>
-          </>
-        )}
-        <div className="relative h-160 overflow-hidden">
-          <div className="flex h-full items-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-            style={{ transform: `translateX(calc(50% - ${current * 33.333 + 16.666}%))` }}>
-            {slides.map((image, index) => {
-              const isActive = index === current;
-              return (
-                <div key={`${image}-${index}`}
-                  className={`w-1/3 shrink-0 transition-all duration-700 ${isActive ? "z-30 scale-100 opacity-100" : "z-10 scale-[0.72] opacity-55"}`}>
-                  <div className={`relative mx-auto overflow-hidden rounded-[34px] transition-all duration-700 ${isActive ? "h-155 w-107.5" : "h-125 w-85"}`}>
-                    <Image src={image} alt={`Slide ${index + 1}`} fill priority={isActive} className="object-cover" sizes="33vw" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* MOBILE SLIDER */}
-      <div className="relative mx-auto block w-full overflow-hidden py-8 md:hidden">
-        {showControls && (
-          <>
-            <button type="button" onClick={prevSlide}
-              className="absolute left-1/2 top-4 z-50 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700">‹</button>
-            <button type="button" onClick={nextSlide}
-              className="absolute bottom-4 left-1/2 z-50 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700">›</button>
-          </>
-        )}
-        <div className="relative h-130 overflow-hidden">
-          {slides.map((image, index) => {
-            const isActive = index === current;
-            return (
-              <div key={`${image}-${index}`}
-                className={`absolute inset-0 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isActive ? "translate-y-0 opacity-100 z-30" : index < current ? "-translate-y-full opacity-0 z-10" : "translate-y-full opacity-0 z-10"}`}>
-                <div className="relative mx-auto h-full w-[92%] overflow-hidden rounded-[30px]">
-                  <Image src={image} alt={`Slide ${index + 1}`} fill className="object-cover" priority={isActive} sizes="100vw" />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </>
-  );
-}
 
 export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerProps) {
   const [memorial, setMemorial] = useState<MemorialData | null>(null);
@@ -253,7 +171,6 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
   const cityPart = memorial?.location ? memorial.location.split(",")[0]?.trim() : "";
 
   const photos = memorial?.deadPersonPhoto || [];
-  const detailImages = useMemo(() => buildSlides(photos).slice(0, 3), [photos]);
 
   const shareTitle = memorial ? `${firstName} ${lastName}` : "Memorial page";
   const shareText = `View the memorial page for ${shareTitle}`;
@@ -352,7 +269,7 @@ export default function ObituaryDetailContainer({ id }: ObituaryDetailContainerP
           )}
 
           {/* DECEASED PHOTOS CAROUSEL */}
-          <ObituaryImageCarousel images={photos} />
+          <ImageSlider images={photos} />
 
           <div className="space-y-2 pt-1">
             <h1 className="font-serif text-3xl font-semibold tracking-tight text-[#304d7a] sm:text-4xl">

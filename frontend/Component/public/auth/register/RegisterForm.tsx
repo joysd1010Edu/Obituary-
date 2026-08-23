@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { savePendingSignup } from "../../../../lib/registerFlow";
+import useAuth from "../../../../hooks/useAuth";
 import { useAxios } from "../../../../context/AxiosProvider";
 import { toast } from "sonner";
 
@@ -53,6 +53,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function RegisterForm() {
   const router = useRouter();
   const api = useAxios();
+  const { setSession } = useAuth();
   const {
     register,
     handleSubmit,
@@ -109,21 +110,37 @@ export default function RegisterForm() {
         formData.append("profilePhoto", data.profilePicture[0]);
       }
 
-      await api.post("/auth/register", formData, {
+      const response = await api.post("/auth/register", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      savePendingSignup({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email.trim().toLowerCase(),
-        password: "",
-      });
+      const { user, accessToken, refreshToken } = response.data;
 
-      toast.success("OTP sent to your email!");
-      router.push("/register/verify");
+      if (user && accessToken && refreshToken) {
+        setSession(
+          {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            userImage: user.profilePhotoUrl || "/Source/person.jpg",
+            role: user.role,
+            tokenApplied: user.tokenApplied,
+            tokenApproveStatus: user.tokenApproveStatus,
+            token: user.token,
+            funeralHome: user.funeralHome,
+          },
+          accessToken,
+          refreshToken,
+        );
+        toast.success("Account created successfully!");
+        router.replace("/");
+      } else {
+        toast.success("Account created successfully! Please log in.");
+        router.replace("/login");
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Registration failed");
     }
@@ -264,10 +281,6 @@ export default function RegisterForm() {
             },
           })}
         />
-      </div>
-
-      <div className="mt-5 space-y-2">
-       
       </div>
 
       <div className="grid gap-5 pt-5 sm:grid-cols-2 sm:gap-x-4 sm:gap-y-6">

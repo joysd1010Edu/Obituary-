@@ -140,11 +140,6 @@ exports.register = async (req, res) => {
       parsedAddress = address || undefined;
     }
 
-    const postalCode = String(parsedAddress?.postalCode || "").trim();
-    if (!postalCode) {
-      // Allow any alphanumeric postal code to pass through since address field validation requires it
-    }
-
     if (req.file) {
       const profileUpload = await uploadBuffer(req.file.buffer, {
         folder: "obituary/profile-photos",
@@ -157,122 +152,22 @@ exports.register = async (req, res) => {
       return res.status(409).json({ message: "User already exists" });
     }
 
-    const otpCode = createOtpCode();
     const passwordHash = await bcrypt.hash(String(password), 12);
-    const otpHash = await bcrypt.hash(otpCode, 10);
-
-    await PendingRegistration.findOneAndUpdate(
-      { email: normalizedEmail },
-      {
-        firstName: String(firstName).trim(),
-        lastName: String(lastName).trim(),
-        email: normalizedEmail,
-        passwordHash,
-        otpHash,
-        profilePhotoUrl: uploadedProfilePhotoUrl,
-        address: parsedAddress,
-        otpExpiresAt: new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000),
-        attempts: 0,
-      },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
-
-    await sendMail({
-      to: normalizedEmail,
-      subject: "Your registration OTP",
-      title: "verification code",
-      bodyIntro:
-        "Thank you for registering with Funeral Home. To complete your sign-up and begin honoring the memories that matter, please use the one-time passcode below.",
-      otpCode,
-      expiresInMinutes: OTP_EXPIRY_MINUTES,
-      bodyOutro:
-        "Enter this code on the registration page to verify your email address. Once verified, you can submit memorials, share photos, and celebrate the lives of those you love.",
-      notice:
-        "If you did not create an account with Funeral Home, please ignore this email. Your address will not be registered and no action is required.",
-    });
-
-    return res.status(200).json({
-      message:
-        "OTP sent to email. Complete verification to finish registration.",
-      email: normalizedEmail,
-    });
-  } catch (error) {
-    console.error("Register error:", error);
-
-    if (error?.code === "EAUTH" || error?.responseCode === 535) {
-      return res.status(503).json({
-        message: "Registration email is temporarily unavailable. Please try again later.",
-      });
-    }
-
-    return res.status(500).json({ message: "Registration failed" });
-  }
-};
-
-// ================= OTP Verification =================
-exports.verifyRegistrationOtp = async (req, res) => {
-  try {
-    const { email, otp } = req.body;
-    const normalizedEmail = normalizeEmail(email);
-
-    if (!normalizedEmail || !otp) {
-      return res.status(400).json({ message: "Email and OTP are required" });
-    }
-
-    const pendingRegistration = await PendingRegistration.findOne({
-      email: normalizedEmail,
-    });
-    if (!pendingRegistration) {
-      return res
-        .status(404)
-        .json({ message: "Pending registration not found" });
-    }
-
-    if (pendingRegistration.otpExpiresAt.getTime() < Date.now()) {
-      await PendingRegistration.deleteOne({ _id: pendingRegistration._id });
-      return res.status(400).json({ message: "OTP has expired" });
-    }
-
-    const isOtpValid = await bcrypt.compare(
-      String(otp).trim(),
-      pendingRegistration.otpHash,
-    );
-    if (!isOtpValid) {
-      pendingRegistration.attempts += 1;
-      await pendingRegistration.save();
-      return res.status(400).json({ message: "Invalid OTP" });
-    }
 
     const createdUser = await User.create({
-      firstName: pendingRegistration.firstName,
-      lastName: pendingRegistration.lastName,
-      email: pendingRegistration.email,
-      passwordHash: pendingRegistration.passwordHash,
-      profilePhotoUrl: pendingRegistration.profilePhotoUrl,
-      address: pendingRegistration.address,
+      firstName: String(firstName).trim(),
+      lastName: String(lastName).trim(),
+      email: normalizedEmail,
+      passwordHash,
+      profilePhotoUrl: uploadedProfilePhotoUrl,
+      address: parsedAddress,
       role: "user",
     });
 
-    const tokens = buildTokenPair(createdUser);
-    createdUser.refreshToken = tokens.refreshToken;
-    await createdUser.save();
-    await PendingRegistration.deleteOne({ email: pendingRegistration.email });
-
-    return res.status(201).json({
-      message: "Registration completed",
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: {
-        id: createdUser._id,
-        firstName: createdUser.firstName,
-        lastName: createdUser.lastName,
-        email: createdUser.email,
-        role: createdUser.role,
-      },
-    });
+    return respondWithAuthTokens(res, createdUser);
   } catch (error) {
-    console.error("Verify registration error:", error);
-    return res.status(500).json({ message: "OTP verification failed" });
+    console.error("Register error:", error);
+    return res.status(500).json({ message: "Registration failed" });
   }
 };
 

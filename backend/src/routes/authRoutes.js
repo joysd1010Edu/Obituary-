@@ -9,7 +9,6 @@ router.post(
   upload.single("profilePhoto"),
   authController.register,
 );
-router.post("/verify-registration", authController.verifyRegistrationOtp);
 router.post("/login", authController.login);
 router.post("/forgot-password", authController.requestPasswordReset);
 router.post("/reset-password/:userId/:token", authController.resetPassword);
