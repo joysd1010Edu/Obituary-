@@ -95,7 +95,7 @@ export default function ObituaryCard({
 
   return (
     <article className="group h-full overflow-hidden rounded-md border border-black/5 bg-white shadow-[0_14px_32px_rgba(15,23,42,0.09)] transition hover:-translate-y-1 hover:shadow-[0_18px_45px_rgba(15,23,42,0.13)]">
-      <Link href={detailHref} className="relative block aspect-3/3 overflow-hidden bg-linear-to-br from-[#e7e3dc] via-white to-[#f0ece5]" aria-label={`View memorial for ${item.deceasedFirstName} ${item.deceasedLastName}`}>
+      <Link href={detailHref} className="relative block aspect-square overflow-hidden bg-linear-to-br from-[#e7e3dc] via-white to-[#f0ece5]" aria-label={`View memorial for ${item.deceasedFirstName} ${item.deceasedLastName}`}>
         <Image
           src={heroImage}
           alt={`${item.deceasedFirstName} ${item.deceasedLastName}`}

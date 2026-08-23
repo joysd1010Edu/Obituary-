@@ -381,7 +381,7 @@ export default function ObituaryListContainer() {
                   key={`memorial-loader-${index}`}
                   className="overflow-hidden rounded-md border border-black/5 bg-white shadow-[0_14px_32px_rgba(15,23,42,0.06)]"
                 >
-                  <div className="aspect-3/3 animate-pulse bg-slate-200" />
+                  <div className="aspect-square animate-pulse bg-slate-200" />
                   <div className="space-y-3 p-5">
                     <div className="h-5 w-2/3 animate-pulse rounded bg-slate-200" />
                     <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200" />

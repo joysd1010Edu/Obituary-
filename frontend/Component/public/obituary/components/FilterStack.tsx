@@ -13,7 +13,7 @@ const publishDateFilters: FilterOption[] = [
 
 const countryFilters: FilterOption[] = [
   { id: "all", label: "All" },
-  { id: "ireland", label: "Ireland" },
+  { id: "ireland", label: "Rep. Of Ireland" },
   { id: "uk", label: "UK" },
 ];
 
