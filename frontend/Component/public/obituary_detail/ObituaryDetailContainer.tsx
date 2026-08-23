@@ -132,8 +132,6 @@ function buildSlides(images: string[]): string[] {
 function ObituaryImageCarousel({ images }: { images: string[] }) {
   const slides = useMemo(() => buildSlides(images), [images]);
   const [current, setCurrent] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   const nextSlide = useCallback(() => {
     setCurrent((prev) => (prev + 1) % slides.length);
   }, [slides.length]);
@@ -142,39 +140,22 @@ function ObituaryImageCarousel({ images }: { images: string[] }) {
     setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
   }, [slides.length]);
 
-  const pauseTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = null;
-  }, []);
-
-  const restartTimer = useCallback(() => {
-    pauseTimer();
-    if (slides.length <= 1) return;
-    timerRef.current = setInterval(nextSlide, AUTO_DELAY);
-  }, [nextSlide, pauseTimer, slides.length]);
-
-  useEffect(() => {
-    if (!slides.length) return;
-    restartTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [slides.length, restartTimer]);
-
   if (!slides.length) return null;
+
+  const showControls = images.length > 1;
 
   return (
     <>
       {/* DESKTOP SLIDER */}
-      <div
-        className="relative mx-auto hidden w-full max-w-7xl overflow-hidden py-14 md:block"
-        onMouseEnter={pauseTimer}
-        onMouseLeave={restartTimer}
-        onFocus={pauseTimer}
-        onBlur={restartTimer}
-      >
-        <button type="button" onClick={() => { prevSlide(); restartTimer(); }}
-          className="absolute left-4 top-1/2 z-50 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-5xl text-slate-700 transition-all duration-300 hover:scale-105 hover:bg-neutral-300">‹</button>
-        <button type="button" onClick={() => { nextSlide(); restartTimer(); }}
-          className="absolute right-4 top-1/2 z-50 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-5xl text-slate-700 transition-all duration-300 hover:scale-105 hover:bg-neutral-300">›</button>
+      <div className="relative mx-auto hidden w-full max-w-7xl overflow-hidden py-14 md:block">
+        {showControls && (
+          <>
+            <button type="button" onClick={prevSlide}
+              className="absolute left-4 top-1/2 z-50 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-5xl text-slate-700 transition-all duration-300 hover:scale-105 hover:bg-neutral-300">‹</button>
+            <button type="button" onClick={nextSlide}
+              className="absolute right-4 top-1/2 z-50 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-5xl text-slate-700 transition-all duration-300 hover:scale-105 hover:bg-neutral-300">›</button>
+          </>
+        )}
         <div className="relative h-160 overflow-hidden">
           <div className="flex h-full items-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{ transform: `translateX(calc(50% - ${current * 33.333 + 16.666}%))` }}>
@@ -194,17 +175,15 @@ function ObituaryImageCarousel({ images }: { images: string[] }) {
       </div>
 
       {/* MOBILE SLIDER */}
-      <div
-        className="relative mx-auto block w-full overflow-hidden py-8 md:hidden"
-        onMouseEnter={pauseTimer}
-        onMouseLeave={restartTimer}
-        onFocus={pauseTimer}
-        onBlur={restartTimer}
-      >
-        <button type="button" onClick={() => { prevSlide(); restartTimer(); }}
-          className="absolute left-1/2 top-4 z-50 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700">‹</button>
-        <button type="button" onClick={() => { nextSlide(); restartTimer(); }}
-          className="absolute bottom-4 left-1/2 z-50 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700">›</button>
+      <div className="relative mx-auto block w-full overflow-hidden py-8 md:hidden">
+        {showControls && (
+          <>
+            <button type="button" onClick={prevSlide}
+              className="absolute left-1/2 top-4 z-50 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700">‹</button>
+            <button type="button" onClick={nextSlide}
+              className="absolute bottom-4 left-1/2 z-50 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full bg-neutral-200/90 text-3xl text-slate-700">›</button>
+          </>
+        )}
         <div className="relative h-130 overflow-hidden">
           {slides.map((image, index) => {
             const isActive = index === current;
